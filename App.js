@@ -1,70 +1,88 @@
-import { StatusBar } from 'expo-status-bar';
-import { Button, StyleSheet, Text, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import { GoogleSignin, GoogleSigninButton } from '@react-native-google-signin/google-signin';
-import { useEffect, useState } from 'react';
 
 export default function App() {
-  const [error, setError] = useState(null);
-  const [userInfo, setUserInfo] = useState(null); // ✅ fixed variable name
+  const [userInfo, setUserInfo] = useState(null);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: "516061784024-qoe79pir7vrl1h05fiaoq8iaesdiieef.apps.googleusercontent.com",
+      offlineAccess: true,
+      forceCodeForRefreshToken: true,
     });
   }, []);
 
-  const signIn = async () => {
+  const signInWithGoogle = async () => {
     try {
       await GoogleSignin.hasPlayServices();
       const user = await GoogleSignin.signIn();
       setUserInfo(user);
-      setError(null); // Clear previous errors on success
     } catch (e) {
-      setError(e.message || e.toString());
+      setError(e.message);
     }
   };
 
-  const logout = async () => {
-    try {
-      await GoogleSignin.revokeAccess();
-      await GoogleSignin.signOut();
-      setUserInfo(null);
-    } catch (e) {
-      setError(e.message || e.toString());
+  const handleSignup = () => {
+    if (!name || !email || !password) {
+      setError('Please fill all fields');
+      return;
     }
+    setUserInfo({ user: { name, email } });
   };
 
   return (
     <View style={styles.container}>
-      {error && <Text style={{ color: 'red' }}>{error}</Text>}
-      
       {userInfo ? (
         <>
-          <Text style={{ marginBottom: 10 }}>
-            {JSON.stringify(userInfo.user, null, 2)}
-          </Text>
-          <Button title="Logout" onPress={logout} />
+          <Text style={styles.success}>Welcome, {userInfo.user?.name || name}</Text>
+          <Button title="Logout" onPress={() => setUserInfo(null)} />
         </>
       ) : (
-        <GoogleSigninButton
-          style={{ width: 192, height: 48 }}
-          size={GoogleSigninButton.Size.Wide}
-          color={GoogleSigninButton.Color.Dark}
-          onPress={signIn}
-        />
+        <>
+          {error !== '' && <Text style={styles.error}>{error}</Text>}
+          <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} />
+          <TextInput style={styles.input} placeholder="Email" keyboardType="email-address" value={email} onChangeText={setEmail} />
+          <TextInput style={styles.input} placeholder="Password" secureTextEntry value={password} onChangeText={setPassword} />
+          <Button title="Sign Up" onPress={handleSignup} />
+          <View style={{ marginTop: 20 }}>
+            <GoogleSigninButton
+              style={{ width: 192, height: 48 }}
+              size={GoogleSigninButton.Size.Wide}
+              color={GoogleSigninButton.Color.Dark}
+              onPress={signInWithGoogle}
+            />
+          </View>
+        </>
       )}
-      
-      <StatusBar style="auto" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    padding: 20,
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 20,
+  },
+  input: {
+    borderBottomWidth: 1,
+    marginBottom: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  error: {
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  success: {
+    fontSize: 18,
+    textAlign: 'center',
+    marginBottom: 20,
   },
 });
