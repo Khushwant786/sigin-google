@@ -1,29 +1,29 @@
-import React, { useState } from 'react';
+// screens/HomeScreen.js
+import React from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { auth, signOut } from '../firebaseConfig';
 
 export default function HomeScreen({ setUserInfo }) {
-  const [error, setError] = useState('');
+  const navigation = useNavigation();
 
-  const logout = async () => {
+  const handleLogout = async () => {
     try {
-      await GoogleSignin.revokeAccess();
-      await GoogleSignin.signOut();
+      await GoogleSignin.revokeAccess().catch(() => {}); // Ignore if not Google user
+      await GoogleSignin.signOut().catch(() => {});
+      await signOut(auth);
+      setUserInfo(null);
+      
     } catch (e) {
-      setError('Logout failed. Try again.');
-      console.error('Logout Error:', e);
-    } finally {
-      if (typeof setUserInfo === 'function') {
-        setUserInfo(null);
-      }
+      console.error('Logout failed:', e);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.welcome}>Welcome to the Home Screen!</Text>
-      {error !== '' && <Text style={styles.error}>{error}</Text>}
-      <Button title="Logout" onPress={logout} />
+      <Text style={styles.text}>Welcome! You are logged in ✅</Text>
+      <Button title="Logout" onPress={handleLogout} />
     </View>
   );
 }
@@ -34,14 +34,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  welcome: {
-    fontSize: 18,
+  text: {
+    fontSize: 20,
+    textAlign: 'center',
     marginBottom: 20,
-    textAlign: 'center',
-  },
-  error: {
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 10,
   },
 });
